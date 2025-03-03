@@ -1,6 +1,6 @@
 name: http_api_handler
 description: A Flutter package for handling HTTP API requests with ease, including file uploads and downloads.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/anwarsafy/http_api_handler
 repository: https://github.com/anwarsafy/http_api_handler
 issue_tracker: https://github.com/anwarsafy/http_api_handler/issues

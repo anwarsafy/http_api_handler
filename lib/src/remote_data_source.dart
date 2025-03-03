@@ -23,10 +23,11 @@ class ApiHandler {
 
   /// Creates a new [ApiHandler] instance.
   ///
-  /// [baseURL] is required and should be the base URL for all API requests.
-  /// [authToken] is optional and used for authenticated requests.
-  /// [enableLogs] determines if request/response logging is enabled (default: true).
-  /// [client] optional HTTP client instance for custom configurations.
+  /// Parameters:
+  /// - [baseURL]: Required base URL for all API requests
+  /// - [authToken]: Optional authentication token for protected endpoints
+  /// - [enableLogs]: Optional flag to enable/disable logging (default: true)
+  /// - [client]: Optional HTTP client instance for custom configurations
   ApiHandler({
     required this.baseURL,
     this.authToken,
@@ -43,9 +44,10 @@ class ApiHandler {
 
   /// Logs request details if logging is enabled.
   ///
-  /// [method] HTTP method (GET, POST, etc.)
-  /// [url] Request URL
-  /// [body] Request body (optional)
+  /// Parameters:
+  /// - [method]: HTTP method (GET, POST, etc.)
+  /// - [url]: Request URL
+  /// - [body]: Optional request body
   void _logRequest(String method, String url, dynamic body) {
     if (enableLogs) {
       ApiLogger.info('REQUEST [$method] $url');
@@ -55,7 +57,8 @@ class ApiHandler {
 
   /// Logs response details if logging is enabled.
   ///
-  /// [response] HTTP response object
+  /// Parameters:
+  /// - [response]: HTTP response object
   void _logResponse(http.Response response) {
     if (enableLogs) {
       ApiLogger.info(
@@ -66,10 +69,11 @@ class ApiHandler {
 
   /// Performs a GET request.
   ///
-  /// [endPoint] The API endpoint
-  /// [queryParameters] Optional query parameters
+  /// Parameters:
+  /// - [endPoint]: The API endpoint
+  /// - [queryParameters]: Optional query parameters
   ///
-  /// Returns the response data as Map<String, dynamic> or List
+  /// Returns a Future that resolves to either a Map or List, depending on the response
   ///
   /// Example:
   /// ```dart
@@ -100,11 +104,12 @@ class ApiHandler {
 
   /// Performs a POST request.
   ///
-  /// [endPoint] The API endpoint
-  /// [body] Request body (optional)
-  /// [customBaseURL] Optional custom base URL for this request
+  /// Parameters:
+  /// - [endPoint]: The API endpoint
+  /// - [body]: Optional request body
+  /// - [customBaseURL]: Optional custom base URL for this request
   ///
-  /// Returns the response data
+  /// Returns a Future that resolves to the response data
   ///
   /// Example:
   /// ```dart
@@ -118,63 +123,123 @@ class ApiHandler {
     Object? body,
     String? customBaseURL,
   }) async {
-    // ... (similar documentation for other methods)
+    final uri = Uri.parse((customBaseURL ?? baseURL) + endPoint);
+
+    _logRequest('POST', uri.toString(), body);
+
+    try {
+      final response = await _client.post(
+        uri,
+        body: jsonEncode(body),
+        headers: _headers,
+      );
+      _logResponse(response);
+      return _handleResponse(response);
+    } catch (e) {
+      ApiLogger.error('POST Request Failed', e);
+      throw NetworkException(message: e.toString());
+    }
   }
 
   /// Performs a PUT request.
   ///
-  /// [endPoint] The API endpoint
-  /// [body] Request body
+  /// Parameters:
+  /// - [endPoint]: The API endpoint
+  /// - [body]: Request body
+  ///
+  /// Returns a Future that resolves to the response data
   Future<dynamic> put({
     required String endPoint,
     required Object body,
   }) async {
-    // ... (documentation)
+    final uri = Uri.parse(baseURL + endPoint);
+
+    _logRequest('PUT', uri.toString(), body);
+
+    try {
+      final response = await _client.put(
+        uri,
+        body: jsonEncode(body),
+        headers: _headers,
+      );
+      _logResponse(response);
+      return _handleResponse(response);
+    } catch (e) {
+      ApiLogger.error('PUT Request Failed', e);
+      throw NetworkException(message: e.toString());
+    }
   }
 
   /// Performs a DELETE request.
   ///
-  /// [endPoint] The API endpoint
-  /// [body] Request body (optional)
+  /// Parameters:
+  /// - [endPoint]: The API endpoint
+  /// - [body]: Optional request body
+  ///
+  /// Returns a Future that resolves to the response data
   Future<dynamic> delete({
     required String endPoint,
     Object? body,
   }) async {
-    // ... (documentation)
+    final uri = Uri.parse(baseURL + endPoint);
+
+    _logRequest('DELETE', uri.toString(), body);
+
+    try {
+      final response = await _client.delete(
+        uri,
+        body: body != null ? jsonEncode(body) : null,
+        headers: _headers,
+      );
+      _logResponse(response);
+      return _handleResponse(response);
+    } catch (e) {
+      ApiLogger.error('DELETE Request Failed', e);
+      throw NetworkException(message: e.toString());
+    }
   }
 
   /// Downloads a file from the server.
   ///
-  /// [endPoint] The API endpoint
-  /// [body] Request body (optional)
-  /// [customBaseURL] Optional custom base URL
+  /// Parameters:
+  /// - [endPoint]: The API endpoint
+  /// - [body]: Optional request body
+  /// - [customBaseURL]: Optional custom base URL
   ///
-  /// Returns the file as Uint8List
+  /// Returns a Future that resolves to the file bytes
   Future<Uint8List> downloadFile({
     required String endPoint,
     Object? body,
     String? customBaseURL,
   }) async {
-    return _client
-        .get(
-      Uri.parse(customBaseURL ?? baseURL + endPoint),
-      headers: _headers,
-    )
-        .then((response) {
+    final uri = Uri.parse((customBaseURL ?? baseURL) + endPoint);
+
+    _logRequest('GET', uri.toString(), body);
+
+    try {
+      final response = await _client.get(uri, headers: _headers);
       _logResponse(response);
-      return response.bodyBytes;
-    }).catchError((e) {
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      }
+      throw BadRequestException(
+          message: 'File download failed: ${response.statusCode}');
+    } catch (e) {
       ApiLogger.error('File Download Failed', e);
       throw NetworkException(message: e.toString());
-    });
+    }
   }
 
   /// Uploads files to the server.
   ///
-  /// [endPoint] The API endpoint
-  /// [fields] Additional form fields
-  /// [files] List of files to upload
-  /// [singleFile] Whether to upload as single file
+  /// Parameters:
+  /// - [endPoint]: The API endpoint
+  /// - [fields]: Additional form fields
+  /// - [files]: List of files to upload
+  /// - [singleFile]: Whether to upload as single file
+  ///
+  /// Returns a Future that resolves to the response data
   ///
   /// Example:
   /// ```dart
@@ -191,15 +256,57 @@ class ApiHandler {
     List<PlatformFile>? files,
     bool singleFile = false,
   }) async {
-    // ... (documentation)
+    final uri = Uri.parse(baseURL + endPoint);
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll(_headers);
+
+    _logRequest('POST (Multipart)', uri.toString(), fields);
+
+    try {
+      if (files != null && files.isNotEmpty) {
+        if (singleFile) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'file',
+              files.first.bytes ?? [],
+              filename: files.first.name,
+            ),
+          );
+        } else {
+          for (var file in files) {
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                'files[]',
+                file.bytes ?? [],
+                filename: file.name,
+              ),
+            );
+          }
+        }
+      }
+
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      _logResponse(response);
+      return _handleResponse(response);
+    } catch (e) {
+      ApiLogger.error('File Upload Failed', e);
+      throw NetworkException(message: e.toString());
+    }
   }
 
   /// Handles the HTTP response and converts it to appropriate format.
   ///
-  /// [response] HTTP response object
+  /// Parameters:
+  /// - [response]: HTTP response object
   ///
+  /// Returns the parsed response body
   /// Throws appropriate exceptions based on status code
-  /// Returns parsed response body
   dynamic _handleResponse(http.Response response) {
     final body = jsonDecode(response.body);
 
