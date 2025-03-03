@@ -1,5 +1,5 @@
 # CHANGELOG.md
-## 1.0.0
+## 1.0.1
 
 * Initial release
 * Added basic HTTP methods (GET, POST, PUT, DELETE)
