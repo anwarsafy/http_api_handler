@@ -284,9 +284,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author ✍️
 
-Mahmoud Aziz
-- GitHub: @mahmoudazizorignal
-- LinkedIn: @mahmoudazizorignal
+Anwar Safy
+- GitHub: @anwarsafy
+- LinkedIn: @anwar-safy
 
 ## Support ❤️
 
